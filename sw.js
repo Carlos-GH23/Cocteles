@@ -6,11 +6,11 @@ const CACHE_NAME = 'cocktail-pwa-v2';
 
 // 1. Recursos del App Shell (Cache Only)
 const appShellAssets = [
-    '/cocktail-pwa/',
-    '/cocktail-pwa/index.html',
-    '/cocktail-pwa/main.js',
-    '/cocktail-pwa/styles/main.css',
-    '/cocktail-pwa/scripts/app.js'
+    './',
+    './index.html',
+    './main.js',
+    './styles/main.css',
+    './scripts/app.js'
 ];
 
 // 2. JSON de Fallback para la API (usado cuando la red falla)
