@@ -2,11 +2,10 @@
 
 //A. CONFIGURACION INICIAL
 
-const CACHE_NAME = 'cocktail-pwa-v2';
+const CACHE_NAME = 'cocktail-pwa-v3';
 
 // 1. Recursos del App Shell (Cache Only)
 const appShellAssets = [
-    './',
     './index.html',
     './main.js',
     './styles/main.css',
