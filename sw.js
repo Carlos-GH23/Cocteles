@@ -10,7 +10,10 @@ const appShellAssets = [
     './index.html',
     './main.js',
     './styles/main.css',
-    './scripts/app.js'
+    './scripts/app.js',
+    './manifest.json',        
+    './images/icons/192.png',  
+    './images/icons/512.png'
 ];
 
 // 2. JSON de Fallback para la API (usado cuando la red falla)
@@ -55,23 +58,9 @@ self.addEventListener('activate', event => {
 // ======================================================
 self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
-    // --- ESTRATEGIA 1: CACHE ONLY (para el App Shell) ---
-    const isAppShellRequest = appShellAssets.some(asset =>
-        requestUrl.pathname === asset || requestUrl.pathname === asset.substring(1)
-    );
-    if (isAppShellRequest) {
-        console.log(`[SW] 🔒 App Shell: CACHE ONLY para ${requestUrl.pathname}`);
-        event.respondWith(
-            caches.match(event.request)
-                .then(response => {
-                    // Devolvemos la respuesta de caché o un error 500 si falta el archivo
-                    return response || new Response('App Shell Asset Missing', { status: 500 });
 
-                })
-        );
-        return;
-    }
-    // --- ESTRATEGIA 2: NETWORK-FIRST con FALLBACK de JSON (para la API)
+    // --- ESTRATEGIA 1: API (NETWORK-FIRST con Fallback) ---
+    // (Esta parte estaba bien, solo la movemos arriba para más claridad)
     if (requestUrl.host === 'www.thecocktaildb.com' && requestUrl.pathname.includes('/search.php')) {
         console.log('[SW] 🔄 API: NETWORK-FIRST con Fallback a JSON Genérico.');
         event.respondWith(
@@ -86,6 +75,36 @@ self.addEventListener('fetch', event => {
         );
         return;
     }
+    // --- ESTRATEGIA 2: NETWORK-FIRST con FALLBACK de JSON (para la API)
+    if (requestUrl.host === 'www.thecocktaildb.com' && requestUrl.pathname.includes('/search.php')) {
+        console.log('[SW] 🔄 API: NETWORK-FIRST con Fallback a JSON Genérico.');
+        event.respondWith(
+        caches.match(event.request)
+            .then(cachedResponse => {
+                if (cachedResponse) {
+                    console.log(`[SW] 🔒 Sirviendo desde caché: ${event.request.url}`);
+                    return cachedResponse;
+                }
+                
+                // Si no está en caché, ir a la red
+                console.log(`[SW] 🌐 No en caché. Yendo a red: ${event.request.url}`);
+                return fetch(event.request);
+            })
+            .catch(() => {
+                // Este CATCH se activa si estamos OFFLINE y el recurso TAMPOCO estaba en caché.
+                
+                // Si la solicitud fallida era la NAVEGACIÓN principal (abrir la app),
+                // debemos servir el 'index.html' como fallback para que la app cargue.
+                if (event.request.mode === 'navigate') {
+                    console.log('[SW] ↩️ Fallback de navegación: sirviendo index.html');
+                    // './index.html' debe estar en tu 'appShellAssets' para que esto funcione.
+                    return caches.match('./index.html');
+                }
+            })
+        );
+        return;
+    }
+    
     // Para todos los demás recursos (imágenes de la API, otros scripts),
     // se utiliza el comportamiento por defecto (ir a la red).
 });
