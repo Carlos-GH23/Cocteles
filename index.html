@@ -1,60 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buscador PWA de Cócteles</title>
-  <link rel="stylesheet" href="styles/main.css" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#06b6d4" />
+  <link rel="stylesheet" href="styles/main.css">
 
-  <style>
-    /* Estilos básicos garantizados sin conexión */
-    #offlineModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #0f172a;
-      color: white;
-      z-index: 9999;
-      text-align: center;
-      font-family: sans-serif;
-      padding: 2rem;
-    }
-    #offlineModal.visible {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    #offlineModal h2 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-    }
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#06b6d4">
 
-    /* Banner de reconexión */
-    #onlineBanner {
-      display: none;
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #10b981;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-family: sans-serif;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      animation: fadeInOut 3s ease;
-      z-index: 9999;
-    }
+  <!-- Configuración para Apple -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cócteles PWA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    @keyframes fadeInOut {
-      0% {opacity: 0; transform: translate(-50%, 20px);}
-      10%, 90% {opacity: 1; transform: translate(-50%, 0);}
-      100% {opacity: 0; transform: translate(-50%, 20px);}
-    }
-  </style>
+  <!-- Íconos -->
+  <link rel="apple-touch-icon" href="images/icons/192.png">
+  <link rel="apple-touch-startup-image" href="images/icons/512.png">
+  <link rel="icon" href="images/icons/192.png" type="image/png">
+
+  
 </head>
 
 <body>
@@ -64,7 +31,7 @@
 
   <main>
     <section class="search-box">
-      <input type="text" id="cocktailName" placeholder="Escribe el nombre del cóctel" />
+      <input type="text" id="cocktailName" placeholder="Escribe el nombre del cóctel (ej. Margarita)" value="Mojito">
       <button id="searchButton">Buscar</button>
     </section>
 
@@ -73,65 +40,131 @@
     </section>
   </main>
 
-  <!-- Modal sin conexión -->
-  <div id="offlineModal">
-    <h2>🚫 Sin conexión</h2>
-    <p>No tienes acceso a Internet. Algunas funciones pueden no estar disponibles.</p>
-  </div>
-
-  <!-- Banner de reconexión -->
-  <div id="onlineBanner">✅ Conexión restablecida</div>
-
+  <!-- Scripts principales -->
   <script src="main.js"></script>
   <script src="scripts/app.js"></script>
 
+    <!-- ✅ Script de conexión con modal solo al iniciar sin red -->
   <script>
-    const offlineModal = document.getElementById('offlineModal');
-    const onlineBanner = document.getElementById('onlineBanner');
+    // 🟥 Mostrar pantalla completa si se abre sin conexión
+    function mostrarPantallaSinConexion() {
+      if (document.getElementById('offlineOverlay')) return;
 
-    // Mostrar modal solo si inicia sin conexión
+      const overlay = document.createElement('div');
+      overlay.id = 'offlineOverlay';
+      overlay.innerHTML = `
+        <div class="offline-content">
+          <h2>🚫 Sin conexión a Internet</h2>
+          <p>No se pudieron cargar datos frescos.</p>
+          <p>Revisa tu conexión y vuelve a intentarlo.</p>
+        </div>
+      `;
+
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(160deg, #1f2937, #0f172a);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        font-family: system-ui, sans-serif;
+        z-index: 99999;
+      `;
+
+      const content = overlay.querySelector('.offline-content');
+      content.style.cssText = `
+        background: rgba(255,255,255,0.1);
+        padding: 32px 40px;
+        border-radius: 16px;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+        max-width: 90%;
+      `;
+
+      overlay.querySelector('h2').style.cssText = `
+        font-size: 22px;
+        margin-bottom: 10px;
+      `;
+
+      overlay.querySelectorAll('p').forEach(p => {
+        p.style.margin = '4px 0';
+      });
+
+      document.body.appendChild(overlay);
+    }
+
+    // 🟩 Quitar pantalla al reconectarse
+    function eliminarPantallaSinConexion() {
+      const overlay = document.getElementById('offlineOverlay');
+      if (overlay) overlay.remove();
+    }
+
+    // 🟩 Mostrar banner de reconexión
+    function mostrarAvisoReconectado() {
+      if (document.getElementById('onlineBanner')) return;
+
+      const banner = document.createElement('div');
+      const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      banner.id = 'onlineBanner';
+      banner.textContent = `✅ Conectado — datos actualizados (${hora})`;
+      banner.style.cssText = `
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 24px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-family: system-ui, sans-serif;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        z-index: 100000;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      `;
+
+      document.body.appendChild(banner);
+      setTimeout(() => (banner.style.opacity = '1'), 100);
+      setTimeout(() => {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 500);
+      }, 4000);
+    }
+
+    // 🧠 Detectar si la app se abre sin conexión
     window.addEventListener('load', () => {
       if (!navigator.onLine) {
-        offlineModal.classList.add('visible');
+        mostrarPantallaSinConexion();
       }
     });
 
-    // Cuando se pierde la conexión
-    window.addEventListener('offline', () => {
-      offlineModal.classList.add('visible');
-    });
+    // 🟩 Cuando vuelve la conexión (solo quita el modal + muestra banner)
+    window.addEventListener('online', () => {
+      eliminarPantallaSinConexion();
+      mostrarAvisoReconectado();
 
-    // Cuando se recupera la conexión
-    window.addEventListener('online', async () => {
-      if (offlineModal.classList.contains('visible')) {
-        offlineModal.classList.remove('visible');
+      // Recargar datos si existe función buscarCoctel()
+      if (typeof buscarCoctel === 'function') {
+        buscarCoctel();
       }
-
-      // Mostrar banner animado
-      onlineBanner.style.display = 'block';
-      setTimeout(() => {
-        onlineBanner.style.display = 'none';
-      }, 3000);
-
-      // Esperar 2s y luego refrescar controladamente
-      setTimeout(async () => {
-        // Borrar caché viejo y recargar con datos frescos
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map(key => caches.delete(key)));
-        }
-        location.reload();
-      }, 2000);
     });
 
-    // Registrar Service Worker
+    // 🚫 No hacemos nada especial cuando se pierde conexión estando dentro
+    // (para que no moleste mientras navegas offline)
+
+    // 🧩 Registrar Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('✅ SW registrado correctamente', reg))
-          .catch(err => console.error('❌ Error en SW:', err));
+          .then(reg => console.log('✅ SW registrado:', reg.scope))
+          .catch(err => console.error('❌ Error al registrar SW:', err));
       });
     }
   </script>
+
+
 </body>
 </html>
