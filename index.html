@@ -42,9 +42,9 @@
   <script src="main.js"></script>
   <script src="scripts/app.js"></script>
 
-  <!-- ✅ Script de conexión avanzada y recarga -->
+  <!-- ✅ Script de conexión con modal solo al iniciar sin red -->
   <script>
-    // 🟥 Pantalla completa sin conexión
+    // 🟥 Mostrar pantalla completa si se abre sin conexión
     function mostrarPantallaSinConexion() {
       if (document.getElementById('offlineOverlay')) return;
 
@@ -58,7 +58,6 @@
         </div>
       `;
 
-      // Estilos embebidos (no dependen del CSS)
       overlay.style.cssText = `
         position: fixed;
         inset: 0;
@@ -133,36 +132,26 @@
       }, 4000);
     }
 
-    // 🧠 Recargar contenido real (sin cerrar PWA)
-    async function recargarDatos() {
-      // Si tienes una función específica, la llamamos
-      if (typeof buscarCoctel === 'function') {
-        console.log('🔄 Reintentando búsqueda...');
-        buscarCoctel();
-      } else {
-        // Si no, forzamos refresco de recursos
-        console.log('🔄 Refrescando recursos desde la red...');
-        caches.keys().then(names => names.forEach(name => caches.delete(name))); // limpia caché viejo
-        window.location.reload(true);
-      }
-    }
-
-    // ⚙️ Estado inicial
+    // 🧠 Detectar si la app se abre sin conexión
     window.addEventListener('load', () => {
-      if (!navigator.onLine) mostrarPantallaSinConexion();
+      if (!navigator.onLine) {
+        mostrarPantallaSinConexion();
+      }
     });
 
-    // ⚙️ Escuchar cambios de conexión
-    window.addEventListener('offline', mostrarPantallaSinConexion);
-
-    window.addEventListener('online', async () => {
+    // 🟩 Cuando vuelve la conexión (solo quita el modal + muestra banner)
+    window.addEventListener('online', () => {
       eliminarPantallaSinConexion();
       mostrarAvisoReconectado();
 
-      // Esperar un pequeño delay para estabilidad de red
-      await new Promise(r => setTimeout(r, 800));
-      recargarDatos(); // 🔁 fuerza actualización o búsqueda
+      // Recargar datos si existe función buscarCoctel()
+      if (typeof buscarCoctel === 'function') {
+        buscarCoctel();
+      }
     });
+
+    // 🚫 No hacemos nada especial cuando se pierde conexión estando dentro
+    // (para que no moleste mientras navegas offline)
 
     // 🧩 Registrar Service Worker
     if ('serviceWorker' in navigator) {
@@ -173,6 +162,7 @@
       });
     }
   </script>
+
 
 </body>
 </html>
