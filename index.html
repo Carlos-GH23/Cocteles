@@ -2,43 +2,84 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador PWA de Cócteles</title>
-    <link rel="stylesheet" href="styles/main.css">
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#06b6d4">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador PWA de Cócteles</title>
+  <link rel="stylesheet" href="styles/main.css">
 
-    <!-- Configuración para Apple -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Cócteles PWA">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#06b6d4">
 
-    <!-- Íconos Apple -->
-    <link rel="apple-touch-icon" href="images/192.png">
-    <link rel="apple-touch-startup-image" href="images/512.png">
+  <!-- Configuración para Apple -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cócteles PWA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- Favicon de respaldo -->
-    <link rel="icon" href="images/192.png" type="image/png">
+  <!-- Íconos -->
+  <link rel="apple-touch-icon" href="images/icons/192.png">
+  <link rel="apple-touch-startup-image" href="images/icons/512.png">
+  <link rel="icon" href="images/icons/192.png" type="image/png">
 </head>
 
 <body>
-    <header>
-        <h1>🍹 Buscador de Cócteles PWA</h1>
-    </header>
-    <main>
-        <section class="search-box">
-            <input type="text" id="cocktailName" placeholder="Escribe el nombre del cóctel (ej. Margarita)"
-                value="Mojito">
-            <button id="searchButton">Buscar</button>
-        </section>
-        <section id="result" class="result-container">
-            <p>Escribe un nombre de cóctel y presiona buscar para iniciar la prueba.</p>
-        </section>
-    </main>
-    <script src="main.js"></script>
-    <script src="scripts/app.js"></script>
+  <header>
+    <h1>🍹 Buscador de Cócteles PWA</h1>
+  </header>
+
+  <main>
+    <section class="search-box">
+      <input type="text" id="cocktailName" placeholder="Escribe el nombre del cóctel (ej. Margarita)" value="Mojito">
+      <button id="searchButton">Buscar</button>
+    </section>
+
+    <section id="result" class="result-container">
+      <p>Escribe un nombre de cóctel y presiona buscar para iniciar la prueba.</p>
+    </section>
+  </main>
+
+  <!-- Scripts principales -->
+  <script src="main.js"></script>
+  <script src="scripts/app.js"></script>
+
+  <!-- Script para detectar conexión -->
+  <script>
+    // ✅ Detectar si hay conexión al cargar la app
+    window.addEventListener('load', () => {
+      if (!navigator.onLine) {
+        mostrarAvisoSinInternet();
+      }
+    });
+
+    // ✅ Escuchar cuando se pierde o recupera la conexión
+    window.addEventListener('offline', mostrarAvisoSinInternet);
+    window.addEventListener('online', eliminarAvisoSinInternet);
+
+    // ✅ Mostrar mensaje flotante
+    function mostrarAvisoSinInternet() {
+      if (document.getElementById('offlineBanner')) return;
+      const banner = document.createElement('div');
+      banner.id = 'offlineBanner';
+      banner.className = 'offline-banner';
+      banner.textContent = '🚫 No tienes conexión a Internet';
+      document.body.appendChild(banner);
+    }
+
+    // ✅ Quitar mensaje cuando vuelve el internet
+    function eliminarAvisoSinInternet() {
+      const banner = document.getElementById('offlineBanner');
+      if (banner) banner.remove();
+    }
+
+    // ✅ Registrar Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Registro SW exitoso:', reg))
+          .catch(err => console.error('Error de registro SW:', err));
+      });
+    }
+  </script>
 </body>
 
 </html>
