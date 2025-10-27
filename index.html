@@ -42,9 +42,9 @@
   <script src="main.js"></script>
   <script src="scripts/app.js"></script>
 
-  <!-- ✅ Script de conexión avanzada -->
+  <!-- ✅ Script de conexión avanzada y recarga -->
   <script>
-    // 🟥 Mostrar pantalla completa cuando no hay conexión
+    // 🟥 Pantalla completa sin conexión
     function mostrarPantallaSinConexion() {
       if (document.getElementById('offlineOverlay')) return;
 
@@ -58,7 +58,7 @@
         </div>
       `;
 
-      // Estilos embebidos (no dependen del CSS externo)
+      // Estilos embebidos (no dependen del CSS)
       overlay.style.cssText = `
         position: fixed;
         inset: 0;
@@ -105,8 +105,9 @@
       if (document.getElementById('onlineBanner')) return;
 
       const banner = document.createElement('div');
+      const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       banner.id = 'onlineBanner';
-      banner.textContent = '✅ Conectado — datos actualizados correctamente';
+      banner.textContent = `✅ Conectado — datos actualizados (${hora})`;
       banner.style.cssText = `
         position: fixed;
         left: 50%;
@@ -132,31 +133,46 @@
       }, 4000);
     }
 
-    // ⚙️ Detectar estado inicial
+    // 🧠 Recargar contenido real (sin cerrar PWA)
+    async function recargarDatos() {
+      // Si tienes una función específica, la llamamos
+      if (typeof buscarCoctel === 'function') {
+        console.log('🔄 Reintentando búsqueda...');
+        buscarCoctel();
+      } else {
+        // Si no, forzamos refresco de recursos
+        console.log('🔄 Refrescando recursos desde la red...');
+        caches.keys().then(names => names.forEach(name => caches.delete(name))); // limpia caché viejo
+        window.location.reload(true);
+      }
+    }
+
+    // ⚙️ Estado inicial
     window.addEventListener('load', () => {
       if (!navigator.onLine) mostrarPantallaSinConexion();
     });
 
-    // ⚙️ Escuchar cambios
+    // ⚙️ Escuchar cambios de conexión
     window.addEventListener('offline', mostrarPantallaSinConexion);
-    window.addEventListener('online', () => {
+
+    window.addEventListener('online', async () => {
       eliminarPantallaSinConexion();
       mostrarAvisoReconectado();
 
-      // 🔄 Opcional: recargar datos automáticos si tienes función buscar()
-      if (typeof buscarCoctel === 'function') {
-        buscarCoctel();
-      }
+      // Esperar un pequeño delay para estabilidad de red
+      await new Promise(r => setTimeout(r, 800));
+      recargarDatos(); // 🔁 fuerza actualización o búsqueda
     });
 
-    // 🧠 Registrar el Service Worker (mantiene caché PWA)
+    // 🧩 Registrar Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('✅ Service Worker registrado:', reg))
+          .then(reg => console.log('✅ SW registrado:', reg.scope))
           .catch(err => console.error('❌ Error al registrar SW:', err));
       });
     }
   </script>
+
 </body>
 </html>
