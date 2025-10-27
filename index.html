@@ -1,85 +1,119 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buscador PWA de Cócteles</title>
-  <link rel="stylesheet" href="styles/main.css">
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#06b6d4">
-
-  <!-- Configuración para Apple -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Cócteles PWA">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <!-- Íconos -->
-  <link rel="apple-touch-icon" href="images/icons/192.png">
-  <link rel="apple-touch-startup-image" href="images/icons/512.png">
-  <link rel="icon" href="images/icons/192.png" type="image/png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi App Offline</title>
+  <link rel="stylesheet" href="main.css" />
 </head>
-
 <body>
-  <header>
-    <h1>🍹 Buscador de Cócteles PWA</h1>
-  </header>
+  <h1>Mi Aplicación</h1>
+  <p>Contenido de la aplicación...</p>
 
-  <main>
-    <section class="search-box">
-      <input type="text" id="cocktailName" placeholder="Escribe el nombre del cóctel (ej. Margarita)" value="Mojito">
-      <button id="searchButton">Buscar</button>
-    </section>
-
-    <section id="result" class="result-container">
-      <p>Escribe un nombre de cóctel y presiona buscar para iniciar la prueba.</p>
-    </section>
-  </main>
-
-  <!-- Scripts principales -->
-  <script src="main.js"></script>
-  <script src="scripts/app.js"></script>
-
-  <!-- Script para detectar conexión -->
+  <!-- ⚙️ Script de conexión -->
   <script>
-    // ✅ Detectar si hay conexión al cargar la app
+    // Mostrar pantalla completa si no hay conexión
+    function mostrarPantallaSinConexion() {
+      if (document.getElementById('offlineOverlay')) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'offlineOverlay';
+      overlay.innerHTML = `
+        <div class="offline-content">
+          <h2>🚫 Sin conexión a Internet</h2>
+          <p>No se pudieron cargar datos frescos.</p>
+          <p>Verifica tu conexión y vuelve a intentarlo.</p>
+        </div>
+      `;
+
+      // Estilos incrustados para que funcionen incluso sin CSS externo
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(160deg, #1f2937, #111827);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        font-family: system-ui, sans-serif;
+        z-index: 99999;
+      `;
+
+      const content = overlay.querySelector('.offline-content');
+      content.style.cssText = `
+        background: rgba(255,255,255,0.1);
+        padding: 30px 40px;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      `;
+
+      overlay.querySelector('h2').style.cssText = `
+        font-size: 24px;
+        margin-bottom: 8px;
+      `;
+
+      overlay.querySelectorAll('p').forEach(p => {
+        p.style.margin = '6px 0';
+      });
+
+      document.body.appendChild(overlay);
+    }
+
+    // Eliminar pantalla de sin conexión
+    function eliminarPantallaSinConexion() {
+      const overlay = document.getElementById('offlineOverlay');
+      if (overlay) overlay.remove();
+    }
+
+    // Mostrar banner de reconexión
+    function mostrarAvisoReconectado() {
+      if (document.getElementById('onlineBanner')) return;
+      const banner = document.createElement('div');
+      banner.id = 'onlineBanner';
+      banner.textContent = '✅ Conectado: datos actualizados correctamente.';
+      banner.style.cssText = `
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-family: system-ui, sans-serif;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+        z-index: 100000;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      `;
+      document.body.appendChild(banner);
+
+      // Animación
+      setTimeout(() => (banner.style.opacity = '1'), 100);
+      setTimeout(() => {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 500);
+      }, 4000);
+    }
+
+    // Detectar cambios de conexión
     window.addEventListener('load', () => {
       if (!navigator.onLine) {
-        mostrarAvisoSinInternet();
+        mostrarPantallaSinConexion();
       }
     });
 
-    // ✅ Escuchar cuando se pierde o recupera la conexión
-    window.addEventListener('offline', mostrarAvisoSinInternet);
-    window.addEventListener('online', eliminarAvisoSinInternet);
+    window.addEventListener('offline', () => {
+      mostrarPantallaSinConexion();
+    });
 
-    // ✅ Mostrar mensaje flotante
-    function mostrarAvisoSinInternet() {
-      if (document.getElementById('offlineBanner')) return;
-      const banner = document.createElement('div');
-      banner.id = 'offlineBanner';
-      banner.className = 'offline-banner';
-      banner.textContent = '🚫 No tienes conexión a Internet';
-      document.body.appendChild(banner);
-    }
-
-    // ✅ Quitar mensaje cuando vuelve el internet
-    function eliminarAvisoSinInternet() {
-      const banner = document.getElementById('offlineBanner');
-      if (banner) banner.remove();
-    }
-
-    // ✅ Registrar Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('Registro SW exitoso:', reg))
-          .catch(err => console.error('Error de registro SW:', err));
-      });
-    }
+    window.addEventListener('online', () => {
+      eliminarPantallaSinConexion();
+      mostrarAvisoReconectado();
+    });
   </script>
 </body>
-
 </html>
